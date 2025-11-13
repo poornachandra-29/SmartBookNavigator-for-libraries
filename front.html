@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>smart book navigator</title>
+  <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="logo">
+        <div class="logo-icon">📚🏛️</div>
+        <div>
+          <div class="logo-title">Smart book navigator</div>
+          <div class="logo-subtitle">find your book in a blink</div>
+        </div>
+      </div>
+      <div class="header-icons">
+        <button class="icon-btn">👤</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Decorative Background -->
+    <div class="decorative-books">
+      <div class="book book-1"></div>
+      <div class="book book-2"></div>
+      <div class="book book-3"></div>
+      <div class="book book-4"></div>
+      <div class="book book-5"></div>
+      <div class="book book-6"></div>
+      <div class="book book-7"></div>
+      <div class="book book-8"></div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <h1 class="hero-title">
+        <span class="hero-discover">Discover</span>
+        <span class="hero-your">Your</span>
+        <span class="hero-next">Next Read</span>
+      </h1>
+      <p class="hero-subtitle">
+        Search millions of books with AI-powered navigation and AR guidance
+      </p>
+    </section>
+
+    <!-- Search Section -->
+    <section class="search-section">
+      <div class="search-container">
+        <input type="text" class="search-input" placeholder="Search by title, author, ISBN...">
+        <button class="scan-btn">📱</button>
+        <div id="relatedBooksDropdown" class="related-dropdown" style="display: none;"></div>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="action-btn ai-btn" onclick="window.location.href='ai.html'">
+          <span class="btn-icon">✨</span>
+          <span>AI Recommend</span>
+        </button>
+        <button class="action-btn voice-btn">
+          <span class="btn-icon">🎤</span>
+          <span>Voice Search</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Explore Section -->
+    <section class="explore-section">
+      <h2 class="section-title">Explore Library</h2>
+      <div class="feature-grid">
+        <div class="feature-card ar-card" onclick="window.location.href='sem.html'">
+          <div class="card-icon">📖</div>
+          <div class="card-title">Search books by semester</div>
+        </div>
+        <div class="feature-card scan-card" onclick="navigateTo('scan')">
+          <div class="feature-card scan-card" onclick="window.location.href='index.html'">
+            <div class="card-badge">NEW</div>
+            <div class="card-icon">📷</div>
+            <div class="card-title">Smart Scan</div>
+          </div>
+        </div>
+        <div class="feature-card books-card" onclick="navigateTo('books')">
+          <div class="card-icon">📚</div>
+          <div class="card-title">Borrow Books</div>
+        </div>
+        <div class="feature-card history-card" onclick="navigateTo('history')">
+          <div class="card-icon">⏱️</div>
+          <div class="card-title">History</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🆕 Most Trending Books Section -->
+    <section class="trending-section">
+      <h2 class="section-title">Most Trending Books</h2>
+      <div class="feature-grid" id="trendingBooksGrid">
+        <!-- Trending books will appear here -->
+      </div>
+    </section>
+  </main>
+
+  <script>
+  // === Category detection helper ===
+  //  function getCategoryForBook(bookName){
+  //   const lower = bookName.toLowerCase();
+  //   if (lower.includes('math') || lower.includes('algebra') || lower.includes('geometry'))
+  //     return 'academic';
+  //   if (lower.includes('physics') || lower.includes('chemistry'))
+  //     return 'academic';
+  //   if (lower.includes('biology') || lower.includes('science'))
+  //     return 'science';
+  //   if (lower.includes('fiction') || lower.includes('novel'))
+  //     return 'fiction';
+  //   if (lower.includes('engineering') || lower.includes('computer') || lower.includes('programming') || lower.includes('cse'))
+  //     return 'dept';
+  //   if (lower.includes('entrance') || lower.includes('exam'))
+  //     return 'entrance';
+  //   return 'reading'; // default
+  // }
+
+async function getCategoryForBook(bookName) {
+  const lowerName = bookName.toLowerCase();
+
+  // Try reading from books.json
+  try {
+    const res = await fetch('books.json');
+    const books = await res.json();
+    const match = books.find(b => b.title.toLowerCase() === lowerName);
+    if (match) return match.category;
+  } catch (err) {
+    console.warn("⚠️ Could not read books.json:", err);
+  }
+
+  // Fallback logic if not found in JSON
+  if (lowerName.includes('math') || lowerName.includes('algebra') || lowerName.includes('geometry'))
+    return 'math';
+  if (lowerName.includes('physics') || lowerName.includes('chemistry'))
+    return 'Physics';
+  if (lowerName.includes('biology') || lowerName.includes('science'))
+    return 'science';
+  if (lowerName.includes('fiction') || lowerName.includes('novel'))
+    return 'fiction';
+  if (lowerName.includes('engineering') || lowerName.includes('computer') || lowerName.includes('programming') || lowerName.includes('cse'))
+    return 'dept';
+  if (lowerName.includes('entrance') || lowerName.includes('exam'))
+    return 'entrance';
+
+  return 'reading';
+}
+
+
+  // === Store search & navigate ===
+  // document.querySelector('.scan-btn').addEventListener('click', function() {
+  //   const searchInput = document.querySelector('.search-input').value.trim();
+  //   if (searchInput) {
+  //     const category = getCategoryForBook(searchInput);
+  //     localStorage.setItem('bookSearch', searchInput);
+  //     localStorage.setItem('bookCategory', category);
+
+  //     // 🆕 Update trending books count
+  //     let trending = JSON.parse(localStorage.getItem('trendingBooks') || '{}');
+  //     trending[searchInput] = (trending[searchInput] || 0) + 1;
+  //     localStorage.setItem('trendingBooks', JSON.stringify(trending));
+
+  //     // Refresh trending section live
+  //     loadTrendingBooks();
+
+  //     window.location.href = 'floor.html';
+  //   } else {
+  //     alert('Please enter a book name before scanning.');
+  //   }
+  // });
+document.querySelector('.scan-btn').addEventListener('click', async function() {
+  const searchInput = document.querySelector('.search-input').value.trim();
+  if (searchInput) {
+    const category = await getCategoryForBook(searchInput);
+    localStorage.setItem('bookSearch', searchInput);
+    localStorage.setItem('bookCategory', category);
+
+    // Update trending count
+    let trending = JSON.parse(localStorage.getItem('trendingBooks') || '{}');
+    trending[searchInput] = (trending[searchInput] || 0) + 1;
+    localStorage.setItem('trendingBooks', JSON.stringify(trending));
+
+    loadTrendingBooks();
+
+    window.location.href = 'floor.html';
+  } else {
+    alert('Please enter a book name before scanning.');
+  }
+});
+
+
+
+  // === Autocomplete Suggestions ===
+  const searchInput = document.querySelector('.search-input');
+  const dropdown = document.getElementById('relatedBooksDropdown');
+  let suggestionTimeout = null;
+
+  async function fetchBookSuggestions(query) {
+    try {
+      const res = await fetch(`https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&limit=5`);
+      const data = await res.json();
+      return data.docs?.map(book => ({
+        title: book.title,
+        author: book.author_name ? book.author_name[0] : 'Unknown'
+      })) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function showSuggestions(suggestions) {
+    if (suggestions.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    dropdown.innerHTML = suggestions.map(s =>
+      `<div class="suggestion-item">
+         <span class="suggestion-title">${s.title}</span>
+         <span class="suggestion-author"> by ${s.author}</span>
+       </div>`
+    ).join('');
+    dropdown.style.display = 'block';
+
+    document.querySelectorAll('.suggestion-item').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        searchInput.value = suggestions[index].title;
+        dropdown.style.display = 'none';
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim();
+    clearTimeout(suggestionTimeout);
+    if (q.length < 2) { dropdown.style.display = 'none'; return; }
+    suggestionTimeout = setTimeout(async () => {
+      const suggestions = await fetchBookSuggestions(q);
+      showSuggestions(suggestions);
+    }, 300);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) dropdown.style.display = 'none';
+  });
+
+  // === 🆕 Trending Books Display ===
+  function loadTrendingBooks() {
+    const grid = document.getElementById('trendingBooksGrid');
+    const trending = JSON.parse(localStorage.getItem('trendingBooks') || '{}');
+    const sorted = Object.entries(trending).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    if (sorted.length === 0) {
+      grid.innerHTML = `<p style="text-align:center; opacity:0.6;">No trending books yet. Search for books to get started!</p>`;
+      return;
+    }
+
+    grid.innerHTML = sorted.map(([title, count]) => `
+      <div class="feature-card book-card">
+        <div class="card-icon">📘</div>
+        <div class="card-title">${title}</div>
+        <div class="card-subinfo">🔍 ${count} searches</div>
+      </div>
+    `).join('');
+  }
+  const voiceBtn = document.querySelector('.voice-btn');
+  voiceBtn.addEventListener('click', () => {
+    // Check for browser support
+    if (!('webkitSpeechRecognition' in window)) {
+      alert('Sorry, your browser does not support voice recognition.');
+      return;
+    }
+
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  // 🎙 Start listening
+  recognition.start();
+  voiceBtn.querySelector('.btn-icon').textContent = '🛑';
+  voiceBtn.querySelector('span:last-child').textContent = 'Listening...';
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript.trim();
+    document.querySelector('.search-input').value = transcript;
+  };
+
+  recognition.onerror = () => {
+    alert('Could not recognize your voice. Please try again.');
+  };
+
+  recognition.onend = () => {
+    voiceBtn.querySelector('.btn-icon').textContent = '🎤';
+    voiceBtn.querySelector('span:last-child').textContent = 'Voice Search';
+  };
+});
+  loadTrendingBooks();
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>All Books Display</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    #count {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #444;
+    }
+    .book {
+      background: white;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .title {
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .author {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <h1>📚 OpenLibrary - First 400 Books</h1>
+  <div id="count">Loading books...</div>
+  <div id="books"></div>
+
+  <script>
+    async function fetchBooks() {
+      const bookContainer = document.getElementById('books');
+      const countDiv = document.getElementById('count');
+
+      let allBooks = [];
+      let totalFound = 0;
+
+      for (let page = 1; page <= 4; page++) { // 4 pages * 100 books = 400
+        const res = await fetch(`https://openlibrary.org/search.json?q=the&page=${page}&limit=25`);
+        const data = await res.json();
+        totalFound = data.numFound;
+        allBooks = allBooks.concat(data.docs);
+        console.log(`✅ Page ${page} fetched (${data.docs.length} books)`);
+      }
+
+      countDiv.innerHTML = `Total books in OpenLibrary: <b>${totalFound.toLocaleString()}</b><br>
+                            Books loaded now: <b>${allBooks.length}</b>`;
+
+      allBooks.forEach(book => {
+        const div = document.createElement('div');
+        div.classList.add('book');
+        div.innerHTML = `
+          <div class="title">${book.title || "No title available"}</div>
+          <div class="author">Author: ${book.author_name ? book.author_name.join(', ') : "Unknown"}</div>
+        `;
+        bookContainer.appendChild(div);
+      });
+
+      console.log("📚 All fetched books:", allBooks);
+    }
+
+    fetchBooks();
+  </script>
+</body>
+</html>

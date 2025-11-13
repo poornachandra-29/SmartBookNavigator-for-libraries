@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LibNav — Semester 1 (Netflix style)</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --card:#ffffff;
+    --muted:#6b7280;
+    --accent:#2563eb;
+    --tag:#eef2ff;
+    --card-shadow: 0 6px 18px rgba(16,24,40,0.06);
+    --rounded:12px;
+  }
+  html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+  /* Header */
+  .topbar{
+    position:sticky;top:0;z-index:40;
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;padding:14px 28px;background:linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.95));
+    border-bottom:1px solid #eef2f5;
+  }
+  .brand{
+    display:flex;align-items:center;gap:12px;font-weight:700;color:#0f172a;font-size:18px;
+  }
+  .brand .logo{
+    width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#60a5fa,#7c3aed);
+    display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px;
+  }
+  .center-controls{display:flex;align-items:center;gap:12px;}
+  .sem-select{
+    padding:8px 12px;border:1px solid #e6eefc;border-radius:10px;background:white;font-size:14px;
+  }
+  .right-controls{display:flex;align-items:center;gap:12px;}
+  .fav-btn{
+    display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1px solid #e6eefc;background:#fff;cursor:pointer;
+    box-shadow:var(--card-shadow);
+  }
+
+  /* Page layout */
+  .page{
+    max-width:1200px;margin:20px auto;padding:0 20px 80px;
+  }
+
+  /* Category section */
+  .category{
+    margin-bottom:28px;
+  }
+  .category-header{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+  }
+  .category-title{
+    display:flex;align-items:center;gap:12px;
+  }
+  .category-banner{
+    height:72px;width:140px;border-radius:10px;overflow:hidden;flex-shrink:0;box-shadow:var(--card-shadow);
+  }
+  .category-name{font-size:18px;font-weight:700;color:#0f172a;}
+  .see-more{color:var(--muted);font-size:13px;}
+
+  /* Horizontal scroll row */
+  .row{
+    position:relative;
+    display:flex;gap:16px;overflow-x:auto;padding-bottom:6px;
+    scroll-behavior:smooth;
+  }
+  .row::-webkit-scrollbar{height:10px}
+  .row::-webkit-scrollbar-thumb{background:#e6eefc;border-radius:10px}
+  .book-card{
+    flex:0 0 160px;background:var(--card);border-radius:12px;padding:8px;box-shadow:var(--card-shadow);
+    display:flex;flex-direction:column;gap:8px;min-width:160px;
+  }
+  .cover{
+    height:220px;border-radius:10px;overflow:hidden;background:#f3f4f6;display:flex;align-items:center;justify-content:center;
+  }
+  .cover img{width:100%;height:100%;object-fit:cover;display:block}
+  .book-title{font-size:13px;font-weight:700;color:#0f172a;line-height:1.1;height:34px;overflow:hidden}
+  .book-author{font-size:12px;color:var(--muted)}
+  .book-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .rating{background:var(--tag);padding:4px 6px;border-radius:8px;font-size:12px}
+  .fav-small{background:#fff;border:1px solid #e6eefc;padding:6px;border-radius:8px;cursor:pointer;font-size:12px}
+
+  /* Favorites panel */
+  .favorites-panel{
+    position:fixed;right:0;top:0;height:100%;width:340px;background:#fff;box-shadow:-18px 0 40px rgba(2,6,23,0.08);
+    transform:translateX(110%);transition:transform .28s ease;z-index:50;padding:20px;overflow:auto;
+  }
+  .favorites-panel.open{transform:translateX(0)}
+  .favorites-panel h3{margin:0 0 12px;font-size:18px}
+  .fav-item{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid #f1f5f9;margin-bottom:12px}
+  .fav-item img{width:56px;height:80px;border-radius:6px;object-fit:cover}
+  .fav-item .meta{flex:1}
+  .fav-item .meta h4{margin:0;font-size:14px}
+  .fav-item .meta p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+  .remove-fav{padding:6px 8px;border-radius:8px;border:1px solid #fde2e2;background:#fff;color:#ef4444;cursor:pointer;font-size:13px}
+
+  /* Helpers */
+  .small-muted{font-size:12px;color:var(--muted)}
+  @media (max-width:760px){
+    .page{padding:0 14px}
+    .cover{height:180px}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">LN</div>
+      <div>
+        <div style="font-size:13px;color:#6b7280">📚 LibNav</div>
+        <div style="font-weight:800;font-size:16px">Smart Semester Library</div>
+      </div>
+    </div>
+
+    <div class="center-controls">
+      <select id="semester" class="sem-select" onchange="onSemesterChange()">
+        <option value="sem1" selected>Semester 1</option>
+        <option value="sem2">Semester 2</option>
+        <option value="sem3">Semester 3</option>
+        <option value="sem4">Semester 4</option>
+        <option value="sem5">Semester 5</option>
+        <option value="sem6">Semester 6</option>
+        <option value="sem7">Semester 7</option>
+        <option value="sem8">Semester 8</option>
+      </select>
+      <div class="small-muted"> (Netflix-style rows — white theme)</div>
+    </div>
+
+    <div class="right-controls">
+      <div class="fav-btn" onclick="toggleFavorites()">
+        <div style="font-weight:700">⭐ My Favorites</div>
+      </div>
+    </div>
+  </div>
+
+  <main class="page" id="page">
+    <!-- Category Sections will be injected here -->
+  </main>
+
+  <!-- Favorites Panel -->
+  <aside id="favoritesPanel" class="favorites-panel" aria-hidden="true">
+    <h3>My Favorites</h3>
+    <div id="favoritesList">
+      <!-- Favorite items injected here -->
+    </div>
+    <div style="margin-top:14px"><button onclick="clearFavorites()" style="padding:10px 12px;background:#ef4444;color:white;border:none;border-radius:10px;cursor:pointer">Clear All</button></div>
+  </aside>
+
+<script>
+/* -------------------------
+   Data: Semester 1 categories
+   Each book has: title, author, rating, img (cover URL)
+   I used real-cover URLs when available (Open Library via ISBN), and public placeholders otherwise.
+   You can replace any img URL with a local path or a different URL.
+   ------------------------- */
+
+const sem1 = [
+  {
+    category: "Programming in C",
+    banner: "https://images.unsplash.com/photo-1587620931263-7e8f92f5b8f1?q=80&w=1400&auto=format&fit=crop&sat=-40",
+    books: [
+      {
+        title: "Let Us C",
+        author: "Yashavant Kanetkar",
+        rating: 4.6,
+        // Open Library ISBN-based cover (where available) or publisher image fallback
+        img: "https://covers.openlibrary.org/b/id/12587072-L.jpg"
+      },
+      {
+        title: "Programming in ANSI C",
+        author: "E. Balagurusamy",
+        rating: 4.5,
+        img: "https://covers.openlibrary.org/b/id/14859624-L.jpg"
+      },
+      {
+        title: "Head First C",
+        author: "David Griffiths",
+        rating: 4.4,
+        img: "https://covers.openlibrary.org/b/isbn/9781449399917-L.jpg"
+
+      },
+      {
+        title: "The C Programming Language",
+        author: "Kernighan & Ritchie",
+        rating: 4.9,
+        img: "https://covers.openlibrary.org/b/isbn/9332549443-L.jpg"
+      }
+    ]
+  },
+
+  {
+    category: "Calculus for Engineering",
+    banner: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1400&auto=format&fit=crop",
+    books: [
+      {
+        title: "Advanced Engineering Mathematics",
+        author: "Erwin Kreyszig",
+        rating: 4.3,
+        img: "https://covers.openlibrary.org/b/isbn/9781285741550-L.jpg"
+      },
+      {
+        title: "Engineering Mathematics Vol 1",
+        author: "B.S. Grewal",
+        rating: 4.2,
+        img: "emath.webp"
+      },
+      {
+        title: "Calculus and Analytic Geometry",
+        author: "Thomas & Finney",
+        rating: 4.1,
+        img: "https://covers.openlibrary.org/b/isbn/9780201531749-L.jpg"
+      },
+      {
+        title: "Calculus: Early Transcendentals",
+        author: "James Stewart",
+        rating: 4.0,
+        img: "https://covers.openlibrary.org/b/isbn/9781285741550-L.jpg"
+      }
+    ]
+  },
+
+  {
+    category: "Reasoning & Aptitude",
+    banner: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1400&auto=format&fit=crop",
+    books: [
+      {
+        title: "A Modern Approach to Logical Reasoning",
+        author: "R.S. Aggarwal",
+        rating: 4.0,
+        img: src="schand.jpg"
+      },
+      {
+        title: "Quantitative Aptitude for Competitive Exams",
+        author: "R.S. Aggarwal",
+        rating: 4.1,
+        img: "https://covers.openlibrary.org/b/isbn/9789352534029-L.jpg"
+      },
+      {
+        title: "How to Prepare for Quantitative Aptitude",
+        author: "Arun Sharma",
+        rating: 4.2,
+        img: "CAT.jpg"
+      },
+      {
+        title: "Logical Reasoning & Data Interpretation",
+        author: "Nishit Sinha",
+        rating: 3.9,
+        img: "data.jpg"
+      }
+    ]
+  },
+
+  {
+    category: "Engineering Physics",
+    banner: "engphy.jpg",
+    books: [
+      {
+        title: "Fundamentals of Physics",
+        author: "Halliday & Resnick",
+        rating: 4.6,
+        img: "funda.png"
+      },
+      {
+        title: "Engineering Physics",
+        author: "H.K. Malik & A.K. Singh",
+        rating: 4.1,
+        img: "ephy.webp"
+      },
+      {
+        title: "Principles of Physics",
+        author: "Serway & Jewett",
+        rating: 4.0,
+        img: "pphy.jpg"
+      },
+      {
+        title: "Applied Physics for Engineers",
+        author: "Neeraj Mehta",
+        rating: 3.9,
+        img: "aphy.jpeg"
+      }
+    ]
+  }
+];
+
+/* -------------------------
+   Favorites: load/save
+   ------------------------- */
+let favorites = JSON.parse(localStorage.getItem('libnav_favorites') || '[]');
+
+function saveFavorites(){
+  localStorage.setItem('libnav_favorites', JSON.stringify(favorites));
+}
+
+/* -------------------------
+   Render helpers
+   ------------------------- */
+
+function createCategorySection(cat){
+  const sec = document.createElement('section');
+  sec.className = 'category';
+
+  // header (banner, title)
+  const header = document.createElement('div');
+  header.className = 'category-header';
+  header.innerHTML = `
+    <div class="category-title">
+      <div class="category-banner"><img src="${cat.banner}" alt="${escapeHtml(cat.category)} banner" style="width:100%;height:100%;object-fit:cover"></div>
+      <div>
+        <div class="category-name">${escapeHtml(cat.category)}</div>
+        <div class="small-muted">Semester 1 — ${cat.books.length} books</div>
+      </div>
+    </div>
+    <div class="see-more">See all</div>
+  `;
+  sec.appendChild(header);
+
+  // row
+  const row = document.createElement('div');
+  row.className = 'row';
+  cat.books.forEach(book => {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    card.innerHTML = `
+      <div class="cover"><img src="${book.img}" alt="${escapeHtml(book.title)} cover" onerror="this.onerror=null;this.src='https://picsum.photos/seed/${encodeURIComponent(book.title)}/300/420'"></div>
+      <div class="book-title">${escapeHtml(book.title)}</div>
+      <div class="book-author">${escapeHtml(book.author)}</div>
+      <div class="book-meta">
+        <div class="rating">★ ${book.rating}</div>
+        <button class="fav-small" onclick='toggleFavoriteFromCard(${JSON.stringify(JSON.stringify(book))})'>
+          ${isFavorite(book) ? "Remove" : "Add"}
+        </button>
+      </div>
+    `;
+    row.appendChild(card);
+  });
+  sec.appendChild(row);
+  return sec;
+}
+
+function renderPageForSemester(sem){
+  const page = document.getElementById('page');
+  page.innerHTML = ''; // clear
+  // Only sem1 implemented for now (others can be added similarly)
+  if(sem === 'sem1'){
+    sem1.forEach(cat => page.appendChild(createCategorySection(cat)));
+  } else {
+    page.innerHTML = '<div style="padding:40px;text-align:center;color:#6b7280">This demo currently shows Semester 1 (Netflix-style). You can extend other semesters similarly.</div>';
+  }
+}
+
+/* -------------------------
+   Favorite logic
+   ------------------------- */
+function isFavorite(book){
+  return favorites.some(f => f.title === book.title && f.author === book.author);
+}
+function toggleFavoriteFromCard(bookJsonEscaped){
+  // double-encoded trick: we passed JSON.stringify(JSON.stringify(book)) -> now parse twice
+  const book = JSON.parse(bookJsonEscaped);
+  toggleFavorite(book);
+}
+function toggleFavorite(book){
+  const idx = favorites.findIndex(f => f.title === book.title && f.author === book.author);
+  if(idx === -1){
+    favorites.push(book);
+  } else {
+    favorites.splice(idx,1);
+  }
+  saveFavorites();
+  renderPageForSemester(document.getElementById('semester').value || 'sem1');
+  renderFavoritesPanel();
+}
+
+/* Favorites panel rendering */
+function renderFavoritesPanel(){
+  const list = document.getElementById('favoritesList');
+  list.innerHTML = '';
+  if(favorites.length === 0){
+    list.innerHTML = '<div class="small-muted">No favorites yet — click "Add" on any book card.</div>';
+    return;
+  }
+  favorites.forEach((b,i) => {
+    const el = document.createElement('div');
+    el.className = 'fav-item';
+    el.innerHTML = `
+      <img src="${b.img}" onerror="this.onerror=null;this.src='https://picsum.photos/seed/${encodeURIComponent(b.title)}/120/160'">
+      <div class="meta">
+        <h4>${escapeHtml(b.title)}</h4>
+        <p>${escapeHtml(b.author)}</p>
+      </div>
+      <div>
+        <button class="remove-fav" onclick='removeFavorite(${i})'>Remove</button>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+function removeFavorite(index){
+  favorites.splice(index,1);
+  saveFavorites();
+  renderFavoritesPanel();
+  renderPageForSemester(document.getElementById('semester').value || 'sem1');
+}
+function clearFavorites(){
+  if(!confirm('Clear all favorites?')) return;
+  favorites = [];
+  saveFavorites();
+  renderFavoritesPanel();
+  renderPageForSemester(document.getElementById('semester').value || 'sem1');
+}
+
+/* -------------------------
+   UI controls
+   ------------------------- */
+let favPanelOpen = false;
+function toggleFavorites(){
+  favPanelOpen = !favPanelOpen;
+  const panel = document.getElementById('favoritesPanel');
+  if(favPanelOpen){
+    panel.classList.add('open');
+    panel.setAttribute('aria-hidden','false');
+    renderFavoritesPanel();
+  } else {
+    panel.classList.remove('open');
+    panel.setAttribute('aria-hidden','true');
+  }
+}
+
+function onSemesterChange(){
+  const sem = document.getElementById('semester').value;
+  renderPageForSemester(sem);
+}
+
+/* -------------------------
+   Small util
+   ------------------------- */
+function escapeHtml(s){
+  if(!s) return '';
+  return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+}
+
+/* -------------------------
+   Initial render
+   ------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  renderPageForSemester('sem1');
+  renderFavoritesPanel();
+});
+</script>
+</body>
+</html>

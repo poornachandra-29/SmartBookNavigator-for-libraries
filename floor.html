@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Navigate to Book</title>
+
+<style>
+  :root {
+    --academic:#f9b65f;
+    --science:#bcf88a;
+    --fiction:#ffa6d3;
+    --reading:#fff7d6;
+    --dept:#83b6e6;
+    --entrance:#ce9971;
+    --bg:#f8f7f4;
+    --accent:#0b84ff;
+  }
+
+  body {
+    margin: 0;
+    font-family: "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    text-align: left;
+    padding: 30px 60px 10px;
+    padding-left: 250px;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    /* padding-left: 200px; */
+  }
+
+  header p {
+    font-size: 1rem;
+    color: #555;
+    margin: 3px 0;
+  }
+
+  .plan {
+    flex: 1;
+    background: #fff;
+    border-radius: 12px;
+    margin: 20px auto 20px;
+    max-width: 1200px;
+    width: 90%;
+    padding: 30px;
+    box-shadow: inset 0 0 0 6px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .zone {
+    flex: 1;
+    height: 100px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    position: relative;
+  }
+
+  .aa {
+    height: 300px;
+    background: var(--reading);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    cursor: default;
+    font-size: 1.2rem;
+    margin: 40px 0;
+  }
+
+  .zone:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  }
+
+  .academic { background: var(--academic); }
+  .science { background: var(--science); }
+  .fiction { background: var(--fiction); }
+  .reading { background: var(--reading); height: 70px; margin: 40px 0; }
+  .dept { background: var(--dept); }
+  .entrance { background: var(--entrance); border: 2px dashed rgba(0,0,0,0.1); }
+
+  @keyframes pulseGlow {
+    0% { box-shadow: 0 0 10px rgba(11,132,255,0.6); }
+    50% { box-shadow: 0 0 25px rgba(11,132,255,0.9); }
+    100% { box-shadow: 0 0 10px rgba(11,132,255,0.6); }
+  }
+
+  .highlighted {
+    outline: 5px solid #0b84ff;
+    transform: scale(1.08);
+    animation: pulseGlow 1.5s infinite;
+    z-index: 10;
+  }
+
+  .popup {
+    position: absolute;
+    background: #0b84ff;
+    color: white;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    animation: floatUp 2s ease-in-out infinite;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  @keyframes floatUp {
+    0%, 100% { transform: translateY(-8px); }
+    50% { transform: translateY(-18px); }
+  }
+
+  /* ✅ Button styling */
+  .goIndex {
+    margin-top: 25px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px 26px;
+    border-radius: 30px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .goIndex:hover {
+    background: #006ce0;
+    transform: scale(1.05);
+  }
+</style>
+</head>
+
+<body>
+  <header>
+    <h1>Navigating to Book in floor 1</h1>
+    <p id="bookName">Searching for: <strong>—</strong></p>
+  <p id="categoryName">Category: <strong>—</strong></p>
+  <div id="availabilityBox" style="margin-top:10px; padding:10px 20px; border-radius:8px; font-weight:600; font-size:1.1em; display:inline-block; background:#eee; color:#333; border:2px solid #ccc;">Checking availability...</div>
+  </header>
+
+  <div class="plan" id="plan">
+    <div class="row">
+      <div class="zone academic">Math</div>
+      <div class="zone academic">Physics</div>
+      <div class="zone science">Science</div>
+      <div class="zone fiction">Fiction</div>
+      <div class="zone science">Biology</div>
+      <div class="zone academic">Chemistry</div>
+    </div>
+
+    <div class="aa">📚 Reading Area</div>
+
+    <div class="row">
+      <div class="zone dept">CSE</div>
+      <div class="zone dept">CIVIL</div>
+      <div class="zone entrance">ENTRANCE</div>
+      <div class="zone dept">MECH</div>
+      <div class="zone dept">ECE</div>
+    </div>
+  </div>
+
+  <!-- ✅ Button to go to index.html -->
+  <button class="goIndex" id="goIndexBtn">🔄 start scanning</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const storedBook = localStorage.getItem('bookSearch');
+  const storedCategory = localStorage.getItem('bookCategory');
+  console.log("📦 Stored Category:", storedCategory);
+  const bookDisplay = document.getElementById('bookName');
+  const categoryDisplay = document.getElementById('categoryName');
+  const plan = document.getElementById('plan');
+  const goBtn = document.getElementById('goIndexBtn');
+
+  if (storedBook)
+    bookDisplay.innerHTML = `Searching for: <strong>${storedBook}</strong>`;
+  if (storedCategory)
+    categoryDisplay.innerHTML = `Category: <strong>${storedCategory}</strong>`;
+
+  // Check availability from books.json
+  const availabilityBox = document.getElementById('availabilityBox');
+  fetch('books.json')
+    .then(res => res.json())
+    .then(books => {
+      // Robust: match ignoring case, spaces, and common suffixes
+      const normalizedInput = (storedBook || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const found = books.some(b => b.title.trim().toLowerCase().replace(/\s+/g, ' ') === normalizedInput);
+      if (found) {
+        availabilityBox.textContent = '✅ Available';
+        availabilityBox.style.background = '#bcf88a';
+        availabilityBox.style.color = '#222';
+        availabilityBox.style.borderColor = '#6c6';
+      } else {
+        availabilityBox.textContent = '❌ Not Available';
+        availabilityBox.style.background = '#ffa6d3';
+        availabilityBox.style.color = '#222';
+        availabilityBox.style.borderColor = '#e66';
+      }
+    })
+    .catch(err => {
+      availabilityBox.textContent = '⚠️ Error checking availability';
+      availabilityBox.style.background = '#eee';
+      availabilityBox.style.color = '#333';
+      availabilityBox.style.borderColor = '#ccc';
+    });
+
+  // highlight matching zone
+  // 🧭 Map actual book category to floor zone class
+
+// Map readable categories to internal zone class names
+const categoryMap = {
+  "CSE": "dept",
+  "Civil": "dept",
+  "Mechanical": "dept",
+  "Mathematics": "academic",
+  "Physics": "academic",
+  "Chemistry": "academic",
+  "Biology": "science",
+  "Science": "science",
+  "Fiction": "fiction",
+  "Entrance": "entrance",
+  "Reading": "reading"
+};
+
+// Get the mapped class and find the corresponding text content
+const mappedClass = categoryMap[storedCategory] || storedCategory?.toLowerCase();
+console.log("🎯 Highlighting Zone:", mappedClass);
+
+// Find the zone that matches both the class AND the text content (normalize for math/maths)
+const target = Array.from(document.querySelectorAll('.zone'))
+  .find(zone => {
+    const zoneText = zone.textContent.trim().toLowerCase();
+    const categoryText = storedCategory?.toLowerCase();
+    // Match math/maths
+    if ((zoneText === 'math' && (categoryText === 'math' || categoryText === 'maths' || categoryText === 'mathematics')))
+      return true;
+    return zoneText === categoryText;
+  });
+
+if (target) {
+  target.classList.add("highlight");
+  console.log("✅ Highlight applied!");
+} else {
+  console.warn("⚠️ No matching zone for:", storedCategory);
+}
+
+
+  // if (target) {
+  //   target.classList.add('highlighted');
+
+  //   // create popup
+  //   const popup = document.createElement('div');
+  //   popup.classList.add('popup');
+  //   popup.innerHTML = "📍 Found Here";
+  //   plan.appendChild(popup);
+
+  //   const rect = target.getBoundingClientRect();
+  //   const planRect = plan.getBoundingClientRect();
+  //   popup.style.left = `${rect.left - planRect.left + rect.width/2 - 50}px`;
+  //   popup.style.top = `${rect.top - planRect.top - 30}px`;
+  //   popup.style.opacity = "1";
+  // }
+  if (target) {
+  setTimeout(() => {
+    target.classList.add('highlighted');
+
+    // create popup
+    const popup = document.createElement('div');
+    popup.classList.add('popup');
+    popup.innerHTML = "📍 Found Here";
+    plan.appendChild(popup);
+
+    const rect = target.getBoundingClientRect();
+    const planRect = plan.getBoundingClientRect();
+    popup.style.left = `${rect.left - planRect.left + rect.width / 2 - 50}px`;
+    popup.style.top = `${rect.top - planRect.top - 30}px`;
+    popup.style.opacity = "1";
+  }, 300); // wait 300ms to ensure layout is ready
+}
+
+
+  // ✅ On button click: send book name to index.html and open it
+  goBtn.addEventListener('click', () => {
+    if (storedBook) {
+      // Pass via URL (optional: or use localStorage if index.html reads it)
+      window.location.href = `index.html?book=${encodeURIComponent(storedBook)}`;
+    } else {
+      window.location.href = "index.html";
+    }
+  });
+});
+</script>
+</body>
+</html>

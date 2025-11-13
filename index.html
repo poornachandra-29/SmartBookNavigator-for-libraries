@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📚 Live Book OCR</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #F8FAFC;
+      margin: 0;
+    }
+    video, img {
+      border: 3px solid #333;
+      border-radius: 10px;
+      margin-top: 10px;
+      width: 640px;
+      height: 480px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 5px;
+    }
+    /* popup when book detected */
+    .detected-popup {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      top: 20px;
+      background: #0b84ff;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      font-weight: 600;
+      z-index: 9999;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>📖 Face your camera to bookshelf to scan</h1>
+  <h2 id="pageTitle"></h2>
+  <input id="searchText" placeholder="Enter book title..." />
+  <button id="startBtn">Start Scanning</button>
+
+  <div>
+    <video id="video" autoplay></video>
+    <img id="output" alt="Processed frame will appear here" />
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const outputImg = document.getElementById('output');
+    const startBtn = document.getElementById('startBtn');
+    const searchInput = document.getElementById('searchText');
+    let running = false;
+
+    // ✅ Read book name and category from URL
+    window.addEventListener('load', () => {
+      const params = new URLSearchParams(window.location.search);
+      const book = params.get('book');
+      const category = params.get('category');
+      if (book) {
+        searchInput.value = decodeURIComponent(book);
+        document.getElementById("pageTitle").textContent = `Scanning for: ${decodeURIComponent(book)} (${category})`;
+      }
+    });
+
+    async function sendFrame() {
+      if (!running) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
+
+      const formData = new FormData();
+      formData.append('file', blob, 'frame.jpg');
+      formData.append('search_text', searchInput.value);
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/process_frame', {
+          method: 'POST',
+          body: formData
+        });
+
+        console.log('📤 Frame sent, status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('📥 Server response:', data);
+
+          if (data.image) {
+            outputImg.src = 'data:image/jpeg;base64,' + data.image;
+          }
+
+          // If any found_texts returned, show popup
+          if (data.found_texts && data.found_texts.length > 0) {
+            // choose the first match
+            const [firstText, conf] = data.found_texts[0];
+            console.log('🎯 Detected text:', firstText, 'conf:', conf);
+            showDetectedPopup(firstText, conf);
+          }
+        } else {
+          // Try to read server error text for debugging
+          let bodyText = '';
+          try { bodyText = await response.text(); } catch (e) { bodyText = '<unreadable>'; }
+          console.warn('⚠️ Server returned non-OK status', response.status, bodyText);
+        }
+      } catch (err) {
+        console.error('❌ Frame send failed', err);
+      }
+
+      setTimeout(sendFrame, 200);
+    }
+
+    startBtn.onclick = async () => {
+      if (running) return;
+      running = true;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          sendFrame();
+        };
+      } catch (err) {
+        alert("Cannot access camera: " + err);
+      }
+    };
+
+    // Create and show a small popup when detection occurs
+    function showDetectedPopup(text, conf) {
+      // If a popup already exists, update and reset timer
+      let popup = document.querySelector('.detected-popup');
+      if (!popup) {
+        popup = document.createElement('div');
+        popup.className = 'detected-popup';
+        document.body.appendChild(popup);
+      }
+      popup.innerHTML = `📍 Book found: <span style="font-weight:800; margin-left:6px">${text}</span> <span style="opacity:0.9; margin-left:8px; font-size:0.9em">(${(conf||0).toFixed(2)})</span>`;
+      popup.style.display = 'flex';
+
+      // clear any existing timeout
+      if (popup._hideTimeout) clearTimeout(popup._hideTimeout);
+      popup._hideTimeout = setTimeout(() => {
+        popup.style.display = 'none';
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
